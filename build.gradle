@@ -1,0 +1,63 @@
+buildscript {
+    repositories {
+        maven { url "http://repo.spring.io/libs-snapshot" }
+        mavenLocal()
+    }
+    dependencies {
+        classpath("org.springframework.boot:spring-boot-gradle-plugin:0.5.0.M6")
+    }
+}
+
+apply plugin: 'java'
+apply plugin: 'eclipse'
+apply plugin: 'idea'
+apply plugin: 'spring-boot'
+
+jar {
+    baseName = 'cloud-test'
+    version =  '0.1.0'
+}
+
+repositories {
+    mavenCentral()
+    maven { url "http://repo.spring.io/libs-snapshot" }
+}
+
+dependencies {
+    compile("org.springframework.boot:spring-boot-starter-web:0.5.0.M6")
+    compile("com.fasterxml.jackson.core:jackson-databind")
+    compile("com.amazonaws:aws-java-sdk:1.6.7")
+    testCompile("junit:junit:4.11")
+}
+
+task wrapper(type: Wrapper) {
+    gradleVersion = '1.8'
+}
+
+task unzipExtJS(type: Copy) {
+    // Copy everything under src/main/webapp
+    // Copy the contents of a Zip file
+    into 'build/explodedWar/libs'
+    from zipTree('lib/extJS-4.2.1.zip')
+}
+
+task unzipExtJSIfNotExists {
+    inputs.file unzipExtJS // up-to-date check for inputs, plus add copyTask as dependency
+    outputs.dir 'src/main/webapp/libs' // up-to-date check for outputs
+    doLast{
+        copy {
+            // Copy the output of copyTask
+            from unzipExtJS
+            into 'src/main/webapp/libs'
+        }
+    }
+}
+
+task copyResources(type: Copy) {
+    from '.'
+	into 'src/main/resources'
+    include 'AwsCredentials.properties'
+}
+
+processResources.dependsOn copyResources
+repackage.dependsOn unzipExtJSIfNotExists
